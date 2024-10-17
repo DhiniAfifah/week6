@@ -5,4 +5,16 @@ export default defineNuxtConfig({
   css: [
     '@picocss/pico/css/pico.min.css',
   ],
+ render: {
+    http2: {
+      push: true,
+    },
+    bundleRenderer: {
+      shouldPreload: (file) => file.endsWith('.css'),
+    },
+  },
+  server: {
+    host: '0.0.0.0', 
+    port: 3000,
+  },
 })

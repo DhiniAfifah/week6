@@ -6,11 +6,13 @@ ENV DATABASE_URL ${DATABASE_URL}
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci 
+RUN npm ci
 
 COPY . .
 
-RUN echo "DATABASE_URL is: $DATABASE_URL"
+# Install MySQL client
+RUN apt-get update && apt-get install -y default-mysql-client && apt-get clean
+
 RUN npx prisma generate
 # RUN npx prisma migrate deploy
 # RUN npx prisma db seed

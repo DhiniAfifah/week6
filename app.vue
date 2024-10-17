@@ -1,6 +1,5 @@
 <template>
   <main class="container-fluid">
-
     <!-- Form to add new comment -->
     <div class="grid">
       <div id="section-form">
@@ -25,10 +24,8 @@
         <!-- Search comments -->
         <section>
           <h2>Search Comments</h2>
-          <form @submit.prevent="searchComments">
-            <label for="search">Keyword:</label>
-            <input type="text" id="search" v-model="searchQuery" placeholder="Search for comments..." />
-            <button type="submit">Search</button>
+          <form @submit.prevent="searchComments">                                                                 <label for="search">Keyword:</label>
+            <input type="text" id="search" v-model="searchQuery" placeholder="Search for comments...">            <button type="submit">Search</button>
             <button @click="fetchComments" type="button">Reset</button>
           </form>
         </section>
@@ -40,7 +37,8 @@
             <h3>{{ comment.name }}</h3>
             <small>{{ comment.email }}</small>
           </header>
-          <div v-html="comment.comment"></div>
+          <!-- Sanitasi sebelum ditampilkan -->
+          <div v-html="sanitizedComment(comment.comment)"></div>
         </article>
       </section>
     </div>
@@ -48,7 +46,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue';
+import DOMPurify from 'dompurify';
 
 const form = ref({
   name: '',
@@ -56,60 +55,69 @@ const form = ref({
   comment: ''
 })
 
-const comments = ref([])
-const searchQuery = ref('')
+const comments = ref([]);
+const searchQuery = ref('');
 
 const fetchComments = async () => {
   try {
     const response = await $fetch('/api/get-comments', {
       method: 'GET'
     })
-    comments.value = response
+    comments.value = response;
   } catch (error) {
-    console.error('Failed to fetch comments:', error)
+    console.error('Failed to fetch comments:', error);
   }
 }
 
 const addComment = async () => {
   try {
+    // Validasi input
+    if (!form.value.name || !form.value.email || !form.value.comment) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
     await $fetch('/api/add-comment', {
       method: 'POST',
-      body: form.value
-    })
+      body: {
+        name: form.value.name,
+        email: form.value.email,
+        comment: DOMPurify.sanitize(form.value.comment) // Sanitasi komentar sebelum dikirim
+      }
+    });
 
     form.value = {
       name: '',
-      email: '',
+ email: '',
       comment: ''
-    }
-    await fetchComments()
+    };
+    await fetchComments();
   } catch (error) {
-    console.error('Failed to add comment:', error)
+    console.error('Failed to add comment:', error);
   }
 }
 
 const searchComments = async () => {
   try {
     if (!searchQuery.value) {
-      return fetchComments()
+      return fetchComments();
     }
 
     const response = await $fetch('/api/search-comment', {
       method: 'GET',
       query: { search: searchQuery.value }
-    })
+    });
 
-    comments.value = response
+    comments.value = response;
   } catch (error) {
-    console.error('Failed to search comments:', error)
+    console.error('Failed to search comments:', error);
   }
 }
 
 const downloadFile = async () => {
   try {
     const filename = 'guide.pdf';
-
-    const url = `/api/read-file?filename=${encodeURIComponent(filename)}`;
+    const url = /api/read-file?filename=${encodeURIComponent(filename)};
 
     const link = document.createElement('a');
     link.href = url;
@@ -120,8 +128,12 @@ const downloadFile = async () => {
   }
 }
 
+const sanitizedComment = (comment) => {
+  return DOMPurify.sanitize(comment);
+}
+
 onMounted(() => {
-  fetchComments()
+  fetchComments();
 })
 </script>
 
